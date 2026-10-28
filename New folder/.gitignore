@@ -1,0 +1,19 @@
+# Chặn thư mục thư viện cực nặng
+node_modules/
+
+# Chặn file chứa mật khẩu
+.env
+
+# Chặn thư mục build
+dist/
+build/
+
+# Log files
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# VS Code settings
+.vscode/
