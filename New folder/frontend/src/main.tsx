@@ -1,3 +1,4 @@
+import "./index.css";
 import React, { useEffect, useState, createContext, useContext, ReactNode } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";

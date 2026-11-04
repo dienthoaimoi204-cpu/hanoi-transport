@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 
 export const ProtectedRoute = ({
   user,

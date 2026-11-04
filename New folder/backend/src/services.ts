@@ -1,3 +1,4 @@
+import { v4 as uuidv4 } from "uuid"; // Vá lỗi 1: Thêm import UUID
 import {
   userRepo,
   ticketTypeRepo,
@@ -5,7 +6,7 @@ import {
   paymentRepo,
   ticketRepo,
   tripHistoryRepo,
-} from "./repositories"; // Chuyển sang dùng Repo kết nối SQL thật
+} from "./repositories";
 
 import {
   hashPassword,
@@ -14,7 +15,6 @@ import {
   generateTransactionCode,
 } from "./utils";
 
-// Hàm tiện ích để ném lỗi (Throw Error) nhanh
 const throwErr = (status: number, message: string, errorCode: string) => {
   const err: any = new Error(message);
   err.status = status;
@@ -22,17 +22,13 @@ const throwErr = (status: number, message: string, errorCode: string) => {
   throw err;
 };
 
-// ===== 1. AUTHENTICATION (Đăng ký / Đăng nhập) =====
+// ===== 1. AUTHENTICATION =====
 export const authService = {
   register: async (payload: any) => {
-    // Kiểm tra email tồn tại chưa (phải await vì gọi DB)
     const existing = await userRepo.findByEmail(payload.email);
     if (existing) throwErr(409, "Email already exists", "EMAIL_EXISTS");
 
-    // Mã hóa mật khẩu
     const hash = await hashPassword(payload.password);
-    
-    // Lưu vào DB
     const user = await userRepo.create({
       FullName: payload.fullName,
       Email: payload.email,
@@ -40,7 +36,6 @@ export const authService = {
       Phone: payload.phone || null,
       Role: "USER",
     });
-    
     return { userId: user.UserId, email: user.Email };
   },
 
@@ -54,26 +49,19 @@ export const authService = {
     const token = signToken({ userId: user.UserId, role: user.Role });
     return {
       token,
-      user: {
-        id: user.UserId,
-        name: user.FullName,
-        email: user.Email,
-        role: user.Role,
-      },
+      user: { id: user.UserId, name: user.FullName, email: user.Email, role: user.Role },
     };
   },
 };
 
-// ===== 2. USER (Thông tin cá nhân) =====
+// ===== 2. USER =====
 export const userService = {
   getById: async (id: number) => {
     const u = await userRepo.findById(id);
     if (!u) return null;
-    // Xóa PasswordHash trước khi trả về Frontend để bảo mật
     const { PasswordHash, ...safeUser } = u;
     return safeUser;
   },
-  
   update: async (id: number, patch: any) => {
     const updated = await userRepo.update(id, {
       FullName: patch.fullName,
@@ -85,14 +73,12 @@ export const userService = {
   },
 };
 
-// ===== 3. TICKET TYPES (Danh sách loại vé) =====
+// ===== 3. TICKET TYPES =====
 export const ticketTypeService = {
-  list: async () => {
-    return await ticketTypeRepo.findAllActive();
-  },
+  list: async () => await ticketTypeRepo.findAllActive(),
 };
 
-// ===== 4. ORDER (Tạo đơn hàng) =====
+// ===== 4. ORDER =====
 export const orderService = {
   create: async (userId: number, items: any[]) => {
     if (!items?.length) throwErr(400, "Empty order", "EMPTY_ORDER");
@@ -108,15 +94,10 @@ export const orderService = {
         throwErr(400, "Quantity must be > 0", "INVALID_QUANTITY");
 
       total += Number(tt.Price) * item.quantity;
-      resolved.push({
-        ticketTypeId: tt.TicketTypeId,
-        quantity: item.quantity,
-        unitPrice: tt.Price,
-      });
+      resolved.push({ ticketTypeId: tt.TicketTypeId, quantity: item.quantity, unitPrice: tt.Price });
     }
 
     const order = await orderRepo.create(userId, total);
-    
     for (const r of resolved) {
       await orderRepo.addDetail({
         OrderId: order.OrderId,
@@ -126,28 +107,20 @@ export const orderService = {
       });
     }
 
-    return {
-      orderId: order.OrderId,
-      totalAmount: order.TotalAmount,
-      status: order.Status,
-    };
+    return { orderId: order.OrderId, totalAmount: order.TotalAmount, status: order.Status };
   },
 
-  listByUser: async (userId: number) => {
-    return await orderRepo.findByUser(userId);
-  },
+  listByUser: async (userId: number) => await orderRepo.findByUser(userId),
 
   detail: async (orderId: number, userId: number) => {
     const order = await orderRepo.findById(orderId);
-    if (!order || order.UserId !== userId)
-      throwErr(404, "Order not found", "ORDER_NOT_FOUND");
-      
+    if (!order || order.UserId !== userId) throwErr(404, "Order not found", "ORDER_NOT_FOUND");
     const details = await orderRepo.getDetails(orderId);
     return { ...order, details };
   },
 };
 
-// ===== 5. PAYMENT (Thanh toán mô phỏng & Sinh vé) =====
+// ===== 5. PAYMENT =====
 export const paymentService = {
   pay: async (userId: number, orderId: number, method: string) => {
     const order = await orderRepo.findById(orderId);
@@ -155,13 +128,25 @@ export const paymentService = {
       throwErr(404, "Order not found", "ORDER_NOT_FOUND");
     if (order.Status !== "PENDING")
       throwErr(400, "Order is not pending", "ORDER_NOT_PENDING");
+
+    // VÁ LỖI 2: Giả lập thanh toán thất bại
+    if (method === "MOCK_FAILED") {
+      await orderRepo.updateStatus(orderId, "CANCELLED");
+      await paymentRepo.create({
+        OrderId: orderId,
+        Amount: order.TotalAmount,
+        PaymentMethod: "MOCK",
+        Status: "FAILED",
+        TransactionCode: `FAIL-${Date.now()}`,
+      });
+      throwErr(400, "Thẻ của bạn không đủ số dư (Giả lập thất bại)", "PAYMENT_FAILED");
+    }
+
     if (method !== "MOCK")
       throwErr(400, "Only MOCK payment supported", "METHOD_NOT_SUPPORTED");
 
-    // Cập nhật trạng thái Order thành PAID
     await orderRepo.updateStatus(orderId, "PAID");
 
-    // Tạo bản ghi Payment
     const payment = await paymentRepo.create({
       OrderId: orderId,
       Amount: order.TotalAmount,
@@ -170,7 +155,6 @@ export const paymentService = {
       TransactionCode: generateTransactionCode(orderId),
     });
 
-    // Tạo vé (Tickets) dựa trên chi tiết đơn hàng
     const details = await orderRepo.getDetails(orderId);
     const tickets = [];
 
@@ -184,15 +168,15 @@ export const paymentService = {
         const duration = tt.DurationMinutes ?? 120;
         validTo.setMinutes(validTo.getMinutes() + duration);
 
-        // Sinh mã code ngẫu nhiên (dùng timestamp để không bị trùng)
-        const code = `TICKET-${Date.now()}-${i}`;
+        // VÁ LỖI 1: Sinh mã vé bằng UUID chống trùng
+        const code = `TICKET-${uuidv4().split("-")[0].toUpperCase()}`;
 
         const ticket = await ticketRepo.create({
           UserId: userId,
           OrderId: orderId,
           TicketTypeId: tt.TicketTypeId,
           TicketCode: code,
-          QRCode: code, // Lưu code, FE tự vẽ QR
+          QRCode: code,
           ValidFrom: validFrom,
           ValidTo: validTo,
         });
@@ -209,21 +193,17 @@ export const paymentService = {
   },
 };
 
-// ===== 6. TICKET (Lấy danh sách và chi tiết vé) =====
+// ===== 6. TICKET =====
 export const ticketService = {
-  listByUser: async (userId: number) => {
-    return await ticketRepo.findByUser(userId);
-  },
-  
+  listByUser: async (userId: number) => await ticketRepo.findByUser(userId),
   detail: async (ticketId: number, userId: number) => {
     const ticket = await ticketRepo.findById(ticketId);
-    if (!ticket || ticket.UserId !== userId)
-      throwErr(404, "Ticket not found", "TICKET_NOT_FOUND");
+    if (!ticket || ticket.UserId !== userId) throwErr(404, "Ticket not found", "TICKET_NOT_FOUND");
     return ticket;
   },
 };
 
-// ===== 7. TRIP HISTORY (Lịch sử chuyến đi) =====
+// ===== 7. TRIP HISTORY =====
 export const tripHistoryService = {
   create: async (userId: number, payload: any) => {
     return await tripHistoryRepo.create({
@@ -233,8 +213,5 @@ export const tripHistoryService = {
       RouteData: payload.routeData ? JSON.stringify(payload.routeData) : null,
     });
   },
-  
-  listByUser: async (userId: number) => {
-    return await tripHistoryRepo.findByUser(userId);
-  },
+  listByUser: async (userId: number) => await tripHistoryRepo.findByUser(userId),
 };

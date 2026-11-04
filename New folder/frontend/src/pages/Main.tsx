@@ -1,25 +1,48 @@
-import { useEffect, useState } from "react";
-import { Link, useSearchParams, useNavigate, useParams } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useSearchParams, useNavigate, useParams, useLocation } from "react-router-dom";
 import { QRCodeCanvas } from "qrcode.react";
 import {
-  authService,
-  ticketService,
-  orderService,
-  paymentService,
-  tripHistoryService,
+  authService, ticketService, orderService, paymentService, tripHistoryService,
 } from "../api";
 
 // ===== 1. HOME =====
 export const Home = ({ user, onLogout }: { user: any; onLogout: () => void }) => (
-  <div style={{ padding: 20 }}>
-    <h1>Xin chào, {user?.name}</h1>
-    <ul>
-      <li><Link to="/buy-ticket">Mua vé</Link></li>
-      <li><Link to="/tickets">Vé của tôi</Link></li>
-      <li><Link to="/history">Lịch sử (Đơn hàng & Chuyến đi)</Link></li>
-      <li><Link to="/profile">Thông tin cá nhân</Link></li>
-    </ul>
-    <button onClick={onLogout} style={{ marginTop: 20 }}>Đăng xuất</button>
+  <div className="min-h-screen bg-gray-50">
+    {/* Navbar */}
+    <nav className="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center">
+      <h1 className="text-2xl font-bold tracking-wide">🚌 Hanoi Transport</h1>
+      <div className="flex items-center space-x-4">
+        <span>Xin chào, <b>{user?.name}</b></span>
+        <button onClick={onLogout} className="bg-red-500 px-4 py-2 rounded-lg hover:bg-red-600 transition text-sm font-semibold">Đăng xuất</button>
+      </div>
+    </nav>
+
+    <div className="max-w-4xl mx-auto mt-10 p-4">
+      <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Bạn muốn đi đâu hôm nay?</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Link to="/buy-ticket" className="bg-white p-6 rounded-xl shadow-sm hover:shadow-xl transition border-l-4 border-blue-500 flex flex-col items-center group">
+          <span className="text-5xl mb-3 group-hover:scale-110 transition">🎫</span>
+          <h3 className="text-xl font-bold text-gray-800">Mua Vé</h3>
+          <p className="text-gray-500 text-center mt-2 text-sm">Đặt vé xe bus, tàu điện ngầm</p>
+        </Link>
+        <Link to="/tickets" className="bg-white p-6 rounded-xl shadow-sm hover:shadow-xl transition border-l-4 border-green-500 flex flex-col items-center group">
+          <span className="text-5xl mb-3 group-hover:scale-110 transition">📱</span>
+          <h3 className="text-xl font-bold text-gray-800">Vé Của Tôi</h3>
+          <p className="text-gray-500 text-center mt-2 text-sm">Xem mã QR và hạn sử dụng vé</p>
+        </Link>
+        <Link to="/history" className="bg-white p-6 rounded-xl shadow-sm hover:shadow-xl transition border-l-4 border-orange-500 flex flex-col items-center group">
+          <span className="text-5xl mb-3 group-hover:scale-110 transition">🕒</span>
+          <h3 className="text-xl font-bold text-gray-800">Lịch Sử</h3>
+          <p className="text-gray-500 text-center mt-2 text-sm">Xem lại các chuyến đi và đơn hàng</p>
+        </Link>
+        <Link to="/profile" className="bg-white p-6 rounded-xl shadow-sm hover:shadow-xl transition border-l-4 border-purple-500 flex flex-col items-center group">
+          <span className="text-5xl mb-3 group-hover:scale-110 transition">👤</span>
+          <h3 className="text-xl font-bold text-gray-800">Tài Khoản</h3>
+          <p className="text-gray-500 text-center mt-2 text-sm">Quản lý thông tin cá nhân</p>
+        </Link>
+      </div>
+    </div>
   </div>
 );
 
@@ -43,98 +66,127 @@ export const Profile = () => {
     alert("Đã cập nhật thông tin thành công!");
   };
 
-  if (!me) return <div style={{ padding: 20 }}>Loading...</div>;
+  if (!me) return <div className="p-10 text-center text-gray-500">Đang tải thông tin...</div>;
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Thông tin cá nhân</h2>
-      <p><b>Email:</b> {me.Email} (Không thể thay đổi)</p>
-      <div style={{ marginBottom: 8 }}>
-        <label>Họ tên: </label>
-        <input value={fullName} onChange={(e) => setFullName(e.target.value)} />
+    <div className="min-h-screen bg-gray-50 p-4 py-10">
+      <div className="max-w-md mx-auto bg-white p-8 rounded-xl shadow-lg">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Thông Tin Cá Nhân</h2>
+        <div className="bg-blue-50 text-blue-800 p-3 rounded-lg mb-6 text-sm">
+          <b>Email:</b> {me.Email} (Không thể thay đổi)
+        </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-gray-700 text-sm font-semibold mb-1">Họ tên</label>
+            <input className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+          </div>
+          <div>
+            <label className="block text-gray-700 text-sm font-semibold mb-1">Số điện thoại</label>
+            <input className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          </div>
+          <button onClick={onSave} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">Lưu thay đổi</button>
+        </div>
+        <div className="mt-6 text-center">
+          <Link to="/" className="text-blue-500 hover:underline">← Về trang chủ</Link>
+        </div>
       </div>
-      <div style={{ marginBottom: 8 }}>
-        <label>Số điện thoại: </label>
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} />
-      </div>
-      <button onClick={onSave} style={{ padding: "6px 12px" }}>Lưu thay đổi</button>
-      <p style={{ marginTop: 20 }}><Link to="/">← Về trang chủ</Link></p>
     </div>
   );
 };
 
-// ===== 3. BUY TICKET (Chia Tab Vé Lượt / Vé Tháng) =====
+// ===== 3. BUY TICKET =====
 export const BuyTicket = () => {
   const [types, setTypes] = useState<any[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
   const [qty, setQty] = useState(1);
   const nav = useNavigate();
+  const location = useLocation();
+  const routeData = location.state as any;
 
-  useEffect(() => {
-    ticketService.listTypes().then(setTypes);
-  }, []);
+  useEffect(() => { ticketService.listTypes().then(setTypes); }, []);
 
   const onBuy = async () => {
     if (!selected) return alert("Vui lòng chọn loại vé!");
     const order = await orderService.create([{ ticketTypeId: selected, quantity: qty }]);
-    nav(`/payment?orderId=${order.orderId}`);
+    nav(`/payment?orderId=${order.orderId}`, { state: routeData });
   };
 
   const singleTickets = types.filter(t => t.Type === "SINGLE");
   const monthlyTickets = types.filter(t => t.Type === "MONTHLY");
 
   const renderTicketCard = (t: any) => (
-    <div key={t.TicketTypeId} style={{ border: selected === t.TicketTypeId ? "2px solid blue" : "1px solid #ccc", padding: 10, marginBottom: 8, cursor: "pointer" }} onClick={() => setSelected(t.TicketTypeId)}>
-      <input
-        type="radio"
-        name="ticket"
-        checked={selected === t.TicketTypeId}
-        onChange={() => setSelected(t.TicketTypeId)}
-      />
-      {" "}<b>{t.Name}</b> — {t.Price.toLocaleString()}đ
+    <div 
+      key={t.TicketTypeId} 
+      className={`border-2 p-4 rounded-lg mb-3 cursor-pointer transition ${selected === t.TicketTypeId ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-blue-300"}`}
+      onClick={() => setSelected(t.TicketTypeId)}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <input type="radio" checked={selected === t.TicketTypeId} readOnly className="w-5 h-5 text-blue-600" />
+          <span className="font-bold text-gray-800 text-lg">{t.Name}</span>
+        </div>
+        <span className="font-bold text-red-600">{t.Price.toLocaleString()}đ</span>
+      </div>
     </div>
   );
 
   return (
-    <div style={{ padding: 20, maxWidth: 600, margin: "0 auto" }}>
-      <h2>Mua vé</h2>
-      
-      <h3>Vé Lượt (Sử dụng 1 lần)</h3>
-      {singleTickets.map(renderTicketCard)}
-      
-      <h3>Vé Tháng (Sử dụng 30 ngày)</h3>
-      {monthlyTickets.map(renderTicketCard)}
+    <div className="min-h-screen bg-gray-50 p-4 py-10">
+      <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Mua Vé</h2>
+        
+        {routeData && routeData.origin && (
+          <div className="bg-blue-100 text-blue-800 p-4 rounded-lg mb-6 border-l-4 border-blue-500">
+            <h3 className="font-bold mb-1">Lộ trình của bạn:</h3>
+            <p>{routeData.origin} → {routeData.destination}</p>
+          </div>
+        )}
 
-      <div style={{ marginTop: 20 }}>
-        <label>Số lượng: </label>
-        <input type="number" min={1} max={10} value={qty} onChange={(e) => setQty(Number(e.target.value))} style={{ width: 60 }} />
+        <div className="mb-8">
+          <h3 className="text-lg font-bold text-gray-700 mb-3 border-b pb-2">Vé Lượt</h3>
+          {singleTickets.map(renderTicketCard)}
+        </div>
+        
+        <div className="mb-8">
+          <h3 className="text-lg font-bold text-gray-700 mb-3 border-b pb-2">Vé Tháng</h3>
+          {monthlyTickets.map(renderTicketCard)}
+        </div>
+
+        <div className="flex items-center gap-4 mb-8 bg-gray-50 p-4 rounded-lg">
+          <label className="font-bold text-gray-700">Số lượng:</label>
+          <input type="number" min={1} max={10} value={qty} onChange={(e) => setQty(Number(e.target.value))} className="w-20 px-3 py-2 border rounded-lg text-center font-bold" />
+        </div>
+        
+        <button onClick={onBuy} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition text-lg shadow-md">
+          Tiến hành thanh toán
+        </button>
+        <div className="mt-6 text-center">
+          <Link to="/" className="text-gray-500 hover:text-blue-500">← Quay lại</Link>
+        </div>
       </div>
-      
-      <button onClick={onBuy} style={{ marginTop: 20, padding: "10px 20px", background: "#007bff", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}>
-        Tiến hành thanh toán
-      </button>
-      <p style={{ marginTop: 20 }}><Link to="/">← Về trang chủ</Link></p>
     </div>
   );
 };
 
-// ===== 4. PAYMENT (Xác nhận thanh toán) =====
+// ===== 4. PAYMENT =====
 export const Payment = () => {
   const [params] = useSearchParams();
+  const location = useLocation();
+  const routeData = location.state as any;
   const orderId = Number(params.get("orderId"));
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const nav = useNavigate();
 
-  useEffect(() => {
-    if (orderId) orderService.detail(orderId).then(setOrder);
-  }, [orderId]);
+  useEffect(() => { if (orderId) orderService.detail(orderId).then(setOrder); }, [orderId]);
 
-  const onPay = async () => {
+  const onPay = async (method: string = "MOCK") => {
     setLoading(true);
     try {
-      const result = await paymentService.pay(orderId);
-      // Chuyển sang trang kết quả và truyền data qua state
+      const result = await paymentService.pay(orderId, method);
+      if (routeData?.origin && routeData?.destination) {
+        await tripHistoryService.create({ origin: routeData.origin, destination: routeData.destination, routeData: { note: "Thanh toán từ tìm đường" } });
+      }
       nav(`/payment-result`, { state: { result, order } });
     } catch (err: any) {
       alert(err.response?.data?.message || "Lỗi thanh toán");
@@ -143,103 +195,138 @@ export const Payment = () => {
     }
   };
 
-  if (!order) return <div style={{ padding: 20 }}>Đang tải đơn hàng...</div>;
+  if (!order) return <div className="p-10 text-center">Đang tải đơn hàng...</div>;
 
   return (
-    <div style={{ padding: 20, maxWidth: 500, margin: "0 auto" }}>
-      <h2>Xác nhận thanh toán</h2>
-      <p>Mã đơn hàng: <b>#{order.OrderId}</b></p>
-      <p>Tổng tiền: <b style={{ color: "red" }}>{order.TotalAmount.toLocaleString()}đ</b></p>
-      <p>Phương thức: Thanh toán mô phỏng (MOCK)</p>
-      <button onClick={onPay} disabled={loading} style={{ padding: "10px 20px", width: "100%", marginTop: 20, background: "green", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}>
-        {loading ? "Đang xử lý..." : "Xác nhận thanh toán"}
-      </button>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md text-center">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-4">Thanh Toán</h2>
+        <p className="text-gray-500 mb-2">Mã đơn hàng</p>
+        <p className="text-3xl font-bold text-gray-800 mb-6">#{order.OrderId}</p>
+        
+        <div className="bg-gray-50 p-4 rounded-lg mb-8">
+          <p className="text-gray-500 mb-1">Tổng tiền cần thanh toán</p>
+          <p className="text-4xl font-bold text-red-600">{order.TotalAmount.toLocaleString()}đ</p>
+        </div>
+        
+        <div className="space-y-3">
+          <button onClick={() => onPay("MOCK")} disabled={loading} className="w-full bg-green-500 text-white font-bold py-3 rounded-lg hover:bg-green-600 transition text-lg">
+            {loading ? "Đang xử lý..." : "Xác nhận thanh toán"}
+          </button>
+          <button onClick={() => onPay("MOCK_FAILED")} disabled={loading} className="w-full bg-white text-red-500 font-bold py-3 rounded-lg border-2 border-red-500 hover:bg-red-50 transition">
+            {loading ? "Đang xử lý..." : "Giả lập thanh toán thất bại"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
 
-// ===== 5. PAYMENT RESULT (Kết quả thanh toán) =====
+// ===== 5. PAYMENT RESULT =====
 export const PaymentResult = () => {
   const nav = useNavigate();
-  // Lấy data được truyền từ trang Payment
   const location = window.history.state?.usr; 
   const result = location?.result;
 
-  if (!result) return <div style={{ padding: 20 }}>Không có dữ liệu thanh toán. <Link to="/">Về trang chủ</Link></div>;
+  if (!result) return <div className="p-10 text-center">Không có dữ liệu. <Link to="/" className="text-blue-500">Về trang chủ</Link></div>;
 
   return (
-    <div style={{ padding: 20, textAlign: "center", maxWidth: 500, margin: "50px auto", border: "1px solid #ccc", borderRadius: 8, boxShadow: "0 4px 8px rgba(0,0,0,0.1)" }}>
-      <h1 style={{ color: "green", fontSize: 60, margin: 0 }}>✔</h1>
-      <h2 style={{ color: "green" }}>Thanh toán thành công!</h2>
-      <p>Mã giao dịch: <b>{result.transactionCode}</b></p>
-      <p>Số lượng vé nhận được: <b>{result.tickets.length}</b></p>
-      
-      <button onClick={() => nav("/tickets")} style={{ padding: "10px 20px", marginTop: 20, background: "#007bff", color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}>
-        Xem vé của tôi ngay
-      </button>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-md text-center">
+        <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <span className="text-4xl text-green-600">✔</span>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">Thanh toán thành công!</h2>
+        <p className="text-gray-500 mb-2">Mã giao dịch</p>
+        <p className="text-lg font-bold text-gray-800 mb-6">{result.transactionCode}</p>
+        
+        <div className="bg-blue-50 text-blue-800 p-4 rounded-lg mb-8">
+          Bạn đã nhận được <b>{result.tickets.length}</b> vé.
+        </div>
+        
+        <button onClick={() => nav("/tickets")} className="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">
+          Xem vé của tôi ngay
+        </button>
+      </div>
     </div>
   );
 };
 
-// ===== 6. MY TICKETS (Vé của tôi) =====
+// ===== 6. MY TICKETS =====
 export const MyTickets = () => {
   const [tickets, setTickets] = useState<any[]>([]);
 
-  useEffect(() => {
-    ticketService.myTickets().then(setTickets);
-  }, []);
+  useEffect(() => { ticketService.myTickets().then(setTickets); }, []);
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Vé của tôi</h2>
-      {tickets.length === 0 && <p>Bạn chưa có vé nào.</p>}
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {tickets.map((t) => (
-          <li key={t.TicketId} style={{ border: "1px solid #ccc", padding: 10, marginBottom: 10, borderRadius: 5 }}>
-            <Link to={`/tickets/${t.TicketId}`} style={{ textDecoration: "none", color: "blue", fontSize: 18 }}>
-              <b>{t.TicketCode}</b>
-            </Link>
-            <br />
-            <span>Hạn sử dụng: {new Date(t.ValidTo).toLocaleString()}</span>
-            <br />
-            <span style={{ color: t.Status === "ACTIVE" ? "green" : "red", fontWeight: "bold" }}>Trạng thái: {t.Status}</span>
-          </li>
-        ))}
-      </ul>
-      <p><Link to="/">← Về trang chủ</Link></p>
+    <div className="min-h-screen bg-gray-50 p-4 py-10">
+      <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 border-b pb-4">Vé Của Tôi</h2>
+        {tickets.length === 0 && <p className="text-center text-gray-500 py-10">Bạn chưa có vé nào.</p>}
+        <ul className="space-y-4">
+          {tickets.map((t) => (
+            <li key={t.TicketId} className="border p-5 rounded-xl hover:shadow-md transition bg-gray-50">
+              <div className="flex justify-between items-start">
+                <div>
+                  <Link to={`/tickets/${t.TicketId}`} className="text-xl font-bold text-blue-600 hover:underline">
+                    {t.TicketCode}
+                  </Link>
+                  <p className="text-gray-600 mt-2 text-sm">HSD: {new Date(t.ValidTo).toLocaleString()}</p>
+                </div>
+                <span className={`px-4 py-1 rounded-full text-sm font-bold ${t.Status === "ACTIVE" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
+                  {t.Status}
+                </span>
+              </div>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-8 text-center">
+          <Link to="/" className="text-gray-500 hover:text-blue-500">← Về trang chủ</Link>
+        </div>
+      </div>
     </div>
   );
 };
 
-// ===== 7. TICKET DETAIL (Chi tiết vé & QR) =====
+// ===== 7. TICKET DETAIL =====
 export const TicketDetail = () => {
   const { id } = useParams();
   const [ticket, setTicket] = useState<any>(null);
 
-  useEffect(() => {
-    if (id) ticketService.detail(Number(id)).then(setTicket);
-  }, [id]);
+  useEffect(() => { if (id) ticketService.detail(Number(id)).then(setTicket); }, [id]);
 
-  if (!ticket) return <div style={{ padding: 20 }}>Đang tải thông tin vé...</div>;
+  if (!ticket) return <div className="p-10 text-center">Đang tải thông tin vé...</div>;
 
-  // Mã QR hiển thị
   const qrValue = JSON.stringify({ code: ticket.TicketCode, to: ticket.ValidTo });
 
   return (
-    <div style={{ padding: 20, textAlign: "center" }}>
-      <h2>Vé điện tử</h2>
-      <p style={{ fontSize: 24, fontWeight: "bold", color: "#007bff" }}>{ticket.TicketCode}</p>
-      <div style={{ margin: "30px 0" }}>
-        <QRCodeCanvas value={qrValue} size={250} />
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center border-t-8 border-blue-500">
+        <h2 className="text-xl font-bold text-gray-500 uppercase tracking-widest mb-2">Vé Điện Tử</h2>
+        <p className="text-3xl font-black text-blue-600 mb-6">{ticket.TicketCode}</p>
+        
+        <div className="bg-white p-4 rounded-xl shadow-inner border border-gray-100 inline-block mb-6">
+          <QRCodeCanvas value={qrValue} size={220} />
+        </div>
+        
+        <div className="text-left text-sm space-y-2 mb-8 bg-gray-50 p-4 rounded-lg">
+          <p><span className="text-gray-500">Hiệu lực:</span> <br/> <b>{new Date(ticket.ValidFrom).toLocaleString()}</b></p>
+          <p><span className="text-gray-500">Hết hạn:</span> <br/> <b>{new Date(ticket.ValidTo).toLocaleString()}</b></p>
+          <p className="flex items-center gap-2">
+            <span className="text-gray-500">Trạng thái:</span> 
+            <span className={`px-2 py-0.5 rounded font-bold text-xs ${ticket.Status === "ACTIVE" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>{ticket.Status}</span>
+          </p>
+        </div>
+        
+        <Link to="/tickets" className="block w-full bg-gray-200 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-300 transition">
+          ← Quay lại
+        </Link>
       </div>
-      <p>Hiệu lực: {new Date(ticket.ValidFrom).toLocaleString()} — {new Date(ticket.ValidTo).toLocaleString()}</p>
-      <p>Trạng thái: <b style={{ color: ticket.Status === "ACTIVE" ? "green" : "red" }}>{ticket.Status}</b></p>
-      <p style={{ marginTop: 30 }}><Link to="/tickets">← Quay lại danh sách vé</Link></p>
     </div>
   );
 };
 
-// ===== 8. HISTORY (Lịch sử chuyến đi & mua vé) =====
+// ===== 8. HISTORY =====
 export const History = () => {
   const [activeTab, setActiveTab] = useState<"trips" | "orders">("trips");
   const [trips, setTrips] = useState<any[]>([]);
@@ -251,55 +338,60 @@ export const History = () => {
   }, []);
 
   return (
-    <div style={{ padding: 20, maxWidth: 800, margin: "0 auto" }}>
-      <h2>Lịch sử hoạt động</h2>
-      
-      {/* Thanh chuyển Tab */}
-      <div style={{ marginBottom: 20, display: "flex", gap: 10 }}>
-        <button 
-          onClick={() => setActiveTab("trips")} 
-          style={{ padding: "10px 20px", fontWeight: activeTab === "trips" ? "bold" : "normal", background: activeTab === "trips" ? "#007bff" : "#eee", color: activeTab === "trips" ? "white" : "black", border: "none", borderRadius: 4, cursor: "pointer" }}
-        >
-          Lịch sử chuyến đi
-        </button>
-        <button 
-          onClick={() => setActiveTab("orders")} 
-          style={{ padding: "10px 20px", fontWeight: activeTab === "orders" ? "bold" : "normal", background: activeTab === "orders" ? "#007bff" : "#eee", color: activeTab === "orders" ? "white" : "black", border: "none", borderRadius: 4, cursor: "pointer" }}
-        >
-          Lịch sử mua vé
-        </button>
+    <div className="min-h-screen bg-gray-50 p-4 py-10">
+      <div className="max-w-3xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Lịch Sử Hoạt Động</h2>
+        
+        {/* Tabs */}
+        <div className="flex justify-center mb-8 bg-gray-100 p-1 rounded-xl w-fit mx-auto">
+          <button 
+            onClick={() => setActiveTab("trips")} 
+            className={`px-6 py-2 rounded-lg font-semibold transition ${activeTab === "trips" ? "bg-white shadow text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Chuyến đi
+          </button>
+          <button 
+            onClick={() => setActiveTab("orders")} 
+            className={`px-6 py-2 rounded-lg font-semibold transition ${activeTab === "orders" ? "bg-white shadow text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+          >
+            Mua vé
+          </button>
+        </div>
+
+        {activeTab === "trips" && (
+          <ul className="space-y-4">
+            {trips.length === 0 && <p className="text-center text-gray-500 py-10">Chưa có chuyến đi nào.</p>}
+            {trips.map((h) => (
+              <li key={h.TripHistoryId} className="border-l-4 border-blue-400 bg-blue-50 p-4 rounded-r-lg">
+                <p className="font-bold text-gray-800 text-lg">{h.Origin} <span className="text-blue-500">→</span> {h.Destination}</p>
+                <p className="text-gray-500 text-sm mt-1">{h.StartedAt ? new Date(h.StartedAt).toLocaleString() : ""}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {activeTab === "orders" && (
+          <ul className="space-y-4">
+            {orders.length === 0 && <p className="text-center text-gray-500 py-10">Chưa có giao dịch mua vé nào.</p>}
+            {orders.map((o) => (
+              <li key={o.OrderId} className="border p-4 rounded-xl flex justify-between items-center bg-gray-50">
+                <div>
+                  <p className="font-bold text-gray-800">Đơn hàng #{o.OrderId}</p>
+                  <p className="text-gray-500 text-sm">{new Date(o.CreatedAt).toLocaleString()}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-red-600">{o.TotalAmount.toLocaleString()}đ</p>
+                  <span className={`text-xs font-bold px-2 py-1 rounded ${o.Status === "PAID" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}`}>{o.Status}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="mt-10 text-center">
+          <Link to="/" className="text-gray-500 hover:text-blue-500">← Về trang chủ</Link>
+        </div>
       </div>
-
-      {/* Nội dung Tab Chuyến đi */}
-      {activeTab === "trips" && (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {trips.length === 0 && <p>Chưa có chuyến đi nào.</p>}
-          {trips.map((h) => (
-            <li key={h.TripHistoryId} style={{ borderBottom: "1px solid #eee", padding: "10px 0" }}>
-              <b style={{ fontSize: 16 }}>{h.Origin} → {h.Destination}</b> 
-              <br/>
-              <span style={{ color: "gray" }}>{h.StartedAt ? new Date(h.StartedAt).toLocaleString() : ""}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {/* Nội dung Tab Mua vé */}
-      {activeTab === "orders" && (
-        <ul style={{ listStyle: "none", padding: 0 }}>
-          {orders.length === 0 && <p>Chưa có giao dịch mua vé nào.</p>}
-          {orders.map((o) => (
-            <li key={o.OrderId} style={{ borderBottom: "1px solid #eee", padding: "10px 0" }}>
-              Mã đơn: <b>#{o.OrderId}</b> 
-              <br/> Ngày mua: {new Date(o.CreatedAt).toLocaleString()} 
-              <br/> Tổng tiền: <b style={{ color: "red" }}>{o.TotalAmount.toLocaleString()}đ</b> 
-              <br/> Trạng thái: <span style={{color: o.Status === "PAID" ? "green" : "orange", fontWeight: "bold"}}>{o.Status}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <p style={{ marginTop: 30 }}><Link to="/">← Về trang chủ</Link></p>
     </div>
   );
 };
